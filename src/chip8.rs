@@ -1,4 +1,4 @@
-use std::{fs, any};
+use std::fs;
 
 const WIDTH: u32 = 64;
 const HEIGHT: u32 = 32;
@@ -49,6 +49,7 @@ impl Chip8 {
                 let y_coord = self.v_registers[y_coord as usize];
 
                 let height = (instruction & 0x000F) as u8;
+
                 let mut any_set = false;
 
                 for i in 0..height {
@@ -68,10 +69,78 @@ impl Chip8 {
             0x7000..=0x7FFF => {
                 let register_idx = (instruction >> 8) & 0x000F;
                 let value = instruction & 0x00FF;
-                self.v_registers[register_idx as usize] += value as u8;
+                println!("{}", value);
+
+                self.v_registers[register_idx as usize] = self.v_registers[register_idx as usize].wrapping_add(value as u8);
             },
             0x1000..=0x1FFF => self.pc = instruction & 0x0FFF,
-            other => return Err(format!("Opcode 0x{:04X} is not defined", other))
+            0x3000..=0x3FFF => {
+                let register_idx = (instruction >> 8) & 0x000F;
+                let value = (instruction & 0x00FF) as u8;
+                if self.v_registers[register_idx as usize] == value {
+                    self.pc += 2;
+                }
+            },
+            0x4000..=0x4FFF => {
+                let register_idx = (instruction >> 8) & 0x000F;
+                let value = (instruction & 0x00FF) as u8;
+                if self.v_registers[register_idx as usize] != value {
+                    self.pc += 2;
+                } 
+            },
+            0x5000..=0x5FF0 => {
+                let x_coord = ((instruction >> 8) as u8) & 0x0F;
+                let x_coord = self.v_registers[x_coord as usize];
+
+                let y_coord = ((instruction >> 4) & 0x000F) as u8;
+                let y_coord = self.v_registers[y_coord as usize];            
+
+                if (x_coord == y_coord) {
+                    self.pc += 2;
+                }
+            },
+            0x9000..=0x9FF0 => {
+                let x_coord = ((instruction >> 8) as u8) & 0x0F;
+                let x_coord = self.v_registers[x_coord as usize];
+
+                let y_coord = ((instruction >> 4) & 0x000F) as u8;
+                let y_coord = self.v_registers[y_coord as usize];            
+
+                if (x_coord != y_coord) {
+                    self.pc += 2;
+                }
+            },
+            0x2000..=0x2FFF => {
+                let address = instruction & 0x0FFF;
+                self.stack[self.sp as usize] = self.pc;
+                self.sp += 1;
+                self.pc = address;
+            },
+            0x00EE => {
+                self.sp -= 1;
+                self.pc = self.stack[self.sp as usize];
+            },
+            0x8000..=0x8FFF => {
+                let x_coord = ((instruction >> 8) as u8) & 0x0F;
+
+                let y_coord = ((instruction >> 4) & 0x000F) as u8;
+                let y_coord = self.v_registers[y_coord as usize];           
+
+                match instruction & 0x000F {
+                    0 => self.v_registers[x_coord as usize] = y_coord,
+                    1 => self.v_registers[x_coord as usize] |= y_coord,
+                    2 => self.v_registers[x_coord as usize] &= y_coord,
+                    3 => self.v_registers[x_coord as usize] ^= y_coord,
+                    4 => self.v_registers[x_coord as usize] = self.v_registers[x_coord as usize].wrapping_add(y_coord),
+                    5 => self.v_registers[x_coord as usize] = self.v_registers[x_coord as usize].wrapping_sub(y_coord),
+                    0x6 | 0xE => {
+
+                    },
+                    _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction))
+                };
+            },
+            0xF015..=0xFF15 | 0x0000 => {},
+            _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction))
         }) 
     }
 

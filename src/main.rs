@@ -9,8 +9,9 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("CHIP8 EMULATOR", 640, 320)
+    let mut window = video_subsystem.window("CHIP8 EMULATOR", 640, 320)
         .position_centered()
+        .fullscreen_desktop()
         .build()
         .unwrap();
 

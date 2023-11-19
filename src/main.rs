@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::event::Event;
@@ -32,6 +34,8 @@ fn main() {
         emulator.cycle();
 
         render_display(&emulator, &mut canvas);
+
+        std::thread::sleep(Duration::from_micros(1250));
     }
 }
 

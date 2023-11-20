@@ -24,19 +24,24 @@ fn main() {
     canvas.set_logical_size(64, 32).unwrap();
 
     let mut emulator: Chip8 = Chip8::new();
-    emulator.load_rom("roms/test_opwhcode.ch8")
+    emulator.load_rom("roms/test_opcode.ch8")
         .expect("the file should exist");
 
     'running: loop {
         for event in event_pump.poll_iter() {
-            if let Event::Quit {..} = event { break 'running }
+            match event {
+                Event::Quit { .. } => break 'running,
+                Event::KeyDown { keycode, .. } => emulator.on_key_down(keycode.unwrap()),
+                Event::KeyUp { keycode, .. } => emulator.on_key_up(keycode.unwrap()),
+                _ => ()
+            }
         }
 
         emulator.cycle();
 
         render_display(&emulator, &mut canvas);
 
-        std::thread::sleep(Duration::from_micros(750));
+        std::thread::sleep(Duration::from_micros(10_000));
     }
 }
 

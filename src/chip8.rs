@@ -1,5 +1,6 @@
 use std::{fs, io::Error};
 use rand::Rng;
+use sdl2::keyboard::Keycode;
 
 const WIDTH: u32 = 64;
 const HEIGHT: u32 = 32;
@@ -87,6 +88,7 @@ pub const FONT: [u8; 80] = [
     0x80,
 ];
 
+
 struct Instruction {
     instruction: u16,
     x: usize,
@@ -97,6 +99,7 @@ struct Instruction {
 }
 
 pub struct Chip8 {
+    keymap: [bool; 16],
     memory: [u8; 4096],
     stack: [u16; 16],
     pub display: [[u8; WIDTH as usize]; HEIGHT as usize],
@@ -109,6 +112,7 @@ pub struct Chip8 {
 impl Chip8 {
     pub fn new() -> Chip8 {
         let mut chip8 = Chip8 {
+            keymap: [false; 16],
             memory: [0; 4096],
             stack: [0; 16],
             display: [[0; WIDTH as usize]; HEIGHT as usize],
@@ -124,6 +128,50 @@ impl Chip8 {
     fn load_font(&mut self) {
         for i in 0..FONT.len() {
             self.memory[i] = FONT[i]; 
+        }
+    }
+
+    pub fn on_key_down(&mut self, key: Keycode) {
+        match key {
+            Keycode::Num1 => self.keymap[0x1] = true,
+            Keycode::Num2 => self.keymap[0x2] = true,
+            Keycode::Num3 => self.keymap[0x3] = true,
+            Keycode::Num4 => self.keymap[0xC] = true,
+            Keycode::Q => self.keymap[0x4] = true,
+            Keycode::W => self.keymap[0x5] = true,
+            Keycode::E => self.keymap[0x6] = true,
+            Keycode::R => self.keymap[0xD] = true,
+            Keycode::A => self.keymap[0x7] = true,
+            Keycode::S => self.keymap[0x8] = true,
+            Keycode::D => self.keymap[0x9] = true,
+            Keycode::F => self.keymap[0xE] = true,
+            Keycode::Z => self.keymap[0xA] = true,
+            Keycode::X => self.keymap[0x0] = true,
+            Keycode::C => self.keymap[0xB] = true,
+            Keycode::V => self.keymap[0xF] = true,
+            _ => ()
+        }
+    }
+
+    pub fn on_key_up(&mut self, key: Keycode) {
+        match key {
+            Keycode::Num1 => self.keymap[0x1] = false,
+            Keycode::Num2 => self.keymap[0x2] = false,
+            Keycode::Num3 => self.keymap[0x3] = false,
+            Keycode::Num4 => self.keymap[0xC] = false,
+            Keycode::Q => self.keymap[0x4] = false,
+            Keycode::W => self.keymap[0x5] = false,
+            Keycode::E => self.keymap[0x6] = false,
+            Keycode::R => self.keymap[0xD] = false,
+            Keycode::A => self.keymap[0x7] = false,
+            Keycode::S => self.keymap[0x8] = false,
+            Keycode::D => self.keymap[0x9] = false,
+            Keycode::F => self.keymap[0xE] = false,
+            Keycode::Z => self.keymap[0xA] = false,
+            Keycode::X => self.keymap[0x0] = false,
+            Keycode::C => self.keymap[0xB] = false,
+            Keycode::V => self.keymap[0xF] = false,
+            _ => ()
         }
     }
 
@@ -286,8 +334,15 @@ impl Chip8 {
     }
 
     fn op_0xfx0a(&mut self, instruction: Instruction) {
-        // TODO
-        self.pc -= 2;
+        if !self.keymap.contains(&true) {
+            self.pc += 2;
+        }
+        for i in 0x0..=0xF {
+            if self.keymap[i] {
+                self.v_registers[instruction.x] = i as u8;
+                return;
+            }
+        }
     }
 
     fn op_0xfx07(&mut self, instruction: Instruction) {
@@ -357,11 +412,15 @@ impl Chip8 {
     }
 
     fn op_0xex9e(&mut self, instruction: Instruction) {
-
+        if self.keymap[self.v_registers[instruction.x] as usize] {
+            self.pc += 2;
+        }
     }
 
     fn op_0xexa1(&mut self, instruction: Instruction) {
-        self.pc += 2;
+        if !self.keymap[self.v_registers[instruction.x] as usize] {
+            self.pc += 2;
+        }
     }
 
     fn op_0x5xy0(&mut self, instruction: Instruction) {

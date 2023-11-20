@@ -1,4 +1,5 @@
 use std::fs;
+use rand::Rng;
 
 const WIDTH: u32 = 64;
 const HEIGHT: u32 = 32;
@@ -146,12 +147,43 @@ impl Chip8 {
         self.pc += 2;
         Ok(match instruction.instruction {
             0x00E0 => self.op_0x00e0(), 
+            0x00EE => self.op_0x000e(),
             0x6000..=0x6FFF => self.op_0x6xnn(instruction),
             0xA000..=0xAFFF => self.op_0xannn(instruction),
             0xD000..=0xDFFF => self.op_0xdxyn(instruction),
             0x2000..=0x2FFF => self.op_0x2nnn(instruction),
             0x7000..=0x7FFF => self.op_0x7xnn(instruction),
             0x1000..=0x1FFF => self.op_0x1nnn(instruction),
+            0x3000..=0x3FFF => self.op_0x3xnn(instruction),
+            0xC000..=0xCFFF => self.op_0xcxnn(instruction),
+            0x4000..=0x4FFF => self.op_0x4xnn(instruction),
+            0xF000..=0xFFFF => {
+                match instruction.nn {
+                    0x1E => self.op_0xfx1e(instruction),
+                    0x15 => self.op_0xfx15(instruction),
+                    0x33 => self.op_0xfx33(instruction),
+                    0x65 => self.op_0xfx65(instruction),
+                    0x0A => self.op_0xfx0a(instruction),
+                    _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction.instruction))
+                }
+            },
+            0x8000..=0x8FFF => {
+                match instruction.n {
+                    0x0 => self.op_0x8xy0(instruction),
+                    0x1 => self.op_0x8xy1(instruction),
+                    0x2 => self.op_0x8xy2(instruction),
+                    0x3 => self.op_0x8xy3(instruction),
+                    0x4 => self.op_0x8xy4(instruction),
+                    _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction.instruction))
+                }
+            },
+            0xE000..=0xEFFF => {
+                match instruction.nn {
+                    0xA1 => self.op_0xexa1(instruction),
+                    0x9E => self.op_0xex9e(instruction),
+                    _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction.instruction))
+                }
+            },
             _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction.instruction))
         })
     }
@@ -198,14 +230,93 @@ impl Chip8 {
 
     fn op_0x2nnn(&mut self, instruction: Instruction) {
         self.stack[self.sp as usize] = self.pc;
+        self.sp += 1;
         self.pc = instruction.nnn;
     }
 
     fn op_0x7xnn(&mut self, instruction: Instruction) {
-        self.v_registers[instruction.x] += instruction.nn;
+        self.v_registers[instruction.x] = self.v_registers[instruction.x].wrapping_add(instruction.nn);
     }
 
     fn op_0x1nnn(&mut self, instruction: Instruction) {
         self.pc = instruction.nnn;
+    }
+
+    fn op_0x000e(&mut self) {
+        self.sp -= 1;
+        self.pc = self.stack[self.sp as usize];
+    }
+
+    fn op_0x3xnn(&mut self, instruction: Instruction) {
+        if self.v_registers[instruction.x] == instruction.nn {
+            self.pc += 2;
+        }
+    }
+
+    fn op_0xcxnn(&mut self, instruction: Instruction) {
+        let rand_value: u8 = rand::thread_rng().gen::<u8>();
+        self.v_registers[instruction.x] = rand_value & instruction.nn;
+    }
+
+    fn op_0x4xnn(&mut self, instruction: Instruction) {
+        if self.v_registers[instruction.x] != instruction.nn {
+            self.pc += 2;
+        }
+    }
+
+    fn op_0xfx1e(&mut self, instruction: Instruction) {
+        self.i_register = self.i_register.wrapping_add(self.v_registers[instruction.x] as u16);
+    }
+
+    fn op_0xfx15(&mut self, instruction: Instruction) {
+        // TODO
+    }
+
+    fn op_0xfx0a(&mut self, instruction: Instruction) {
+        // TODO
+        self.pc -= 2;
+    }
+
+    fn op_0x8xy0(&mut self, instruction: Instruction) {
+        self.v_registers[instruction.x] = self.v_registers[instruction.y];
+    }
+
+    fn op_0x8xy1(&mut self, instruction: Instruction) {
+        self.v_registers[instruction.x] |= self.v_registers[instruction.y];
+    }
+
+    fn op_0x8xy2(&mut self, instruction: Instruction) {
+        self.v_registers[instruction.x] &= self.v_registers[instruction.y];
+    }
+
+    fn op_0x8xy3(&mut self, instruction: Instruction) {
+        self.v_registers[instruction.x] ^= self.v_registers[instruction.y];
+    }
+
+    fn op_0x8xy4(&mut self, instruction: Instruction) {
+        let (x, y) = (self.v_registers[instruction.x] as u16, self.v_registers[instruction.y] as u16);
+        self.v_registers[0xF] = if x + y > 0xFF { 1 } else { 0 };
+        self.v_registers[instruction.x] = self.v_registers[instruction.x].wrapping_add(y as u8);
+    }
+
+    fn op_0xfx33(&mut self, instruction: Instruction) {
+        let vx = self.v_registers[instruction.x];
+        self.memory[self.i_register as usize] = vx / 100;
+        self.memory[self.i_register as usize + 1] = (vx / 10) % 10;  
+        self.memory[self.i_register as usize + 2] = vx % 10;
+    }
+
+    fn op_0xfx65(&mut self, instruction: Instruction) {
+        for i in 0..=instruction.x {
+            self.v_registers[i] = self.memory[self.i_register as usize + i];
+        }
+    }
+
+    fn op_0xex9e(&mut self, instruction: Instruction) {
+
+    }
+
+    fn op_0xexa1(&mut self, instruction: Instruction) {
+        self.pc += 2;
     }
 }

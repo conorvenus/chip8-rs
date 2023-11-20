@@ -24,7 +24,7 @@ fn main() {
     canvas.set_logical_size(64, 32).unwrap();
 
     let mut emulator: Chip8 = Chip8::new();
-    emulator.load_rom("roms/TETRIS");
+    emulator.load_rom("roms/INVADERS");
 
     'running: loop {
         for event in event_pump.poll_iter() {

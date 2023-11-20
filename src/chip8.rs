@@ -157,13 +157,19 @@ impl Chip8 {
             0x3000..=0x3FFF => self.op_0x3xnn(instruction),
             0xC000..=0xCFFF => self.op_0xcxnn(instruction),
             0x4000..=0x4FFF => self.op_0x4xnn(instruction),
+            0x5000..=0x5FFF => self.op_0x5xy0(instruction),
+            0x9000..=0x9FFF => self.op_0x9xy0(instruction),
             0xF000..=0xFFFF => {
                 match instruction.nn {
                     0x1E => self.op_0xfx1e(instruction),
                     0x15 => self.op_0xfx15(instruction),
                     0x33 => self.op_0xfx33(instruction),
                     0x65 => self.op_0xfx65(instruction),
+                    0x55 => self.op_0xfx55(instruction),
                     0x0A => self.op_0xfx0a(instruction),
+                    0x07 => self.op_0xfx07(instruction),
+                    0x29 => self.op_0xfx29(instruction),
+                    0x18 => self.op_0xfx18(instruction),
                     _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction.instruction))
                 }
             },
@@ -174,6 +180,9 @@ impl Chip8 {
                     0x2 => self.op_0x8xy2(instruction),
                     0x3 => self.op_0x8xy3(instruction),
                     0x4 => self.op_0x8xy4(instruction),
+                    0x5 => self.op_0x8xy5(instruction),
+                    0x6 => self.op_0x8xy6(instruction),
+                    0xE => self.op_0x8xye(instruction),
                     _ => return Err(format!("Opcode 0x{:04X} is not defined", instruction.instruction))
                 }
             },
@@ -272,9 +281,18 @@ impl Chip8 {
         // TODO
     }
 
+    fn op_0xfx18(&mut self, instruction: Instruction) {
+        // TODO
+    }
+
     fn op_0xfx0a(&mut self, instruction: Instruction) {
         // TODO
         self.pc -= 2;
+    }
+
+    fn op_0xfx07(&mut self, instruction: Instruction) {
+        // TODO
+        self.v_registers[instruction.x] = 0;
     }
 
     fn op_0x8xy0(&mut self, instruction: Instruction) {
@@ -299,6 +317,22 @@ impl Chip8 {
         self.v_registers[instruction.x] = self.v_registers[instruction.x].wrapping_add(y as u8);
     }
 
+    fn op_0x8xy5(&mut self, instruction: Instruction) {
+        let (x, y) = (self.v_registers[instruction.x], self.v_registers[instruction.y]);
+        self.v_registers[0xF] = if y > x { 0 } else { 1 };
+        self.v_registers[instruction.x] = self.v_registers[instruction.x].wrapping_sub(y);
+    }
+
+    fn op_0x8xy6(&mut self, instruction: Instruction) {
+        self.v_registers[0xF] = self.v_registers[instruction.x] & 1;
+        self.v_registers[instruction.x] >>= 1;
+    }
+    
+    fn op_0x8xye(&mut self, instruction: Instruction) {
+        self.v_registers[0xF] = (self.v_registers[instruction.x] >> 7) & 1;
+        self.v_registers[instruction.x] <<= 1;
+    }
+
     fn op_0xfx33(&mut self, instruction: Instruction) {
         let vx = self.v_registers[instruction.x];
         self.memory[self.i_register as usize] = vx / 100;
@@ -312,11 +346,33 @@ impl Chip8 {
         }
     }
 
+    fn op_0xfx55(&mut self, instruction: Instruction) {
+        for i in 0..=instruction.x {
+            self.memory[self.i_register as usize + i] = self.v_registers[i];
+        }
+    }
+
+    fn op_0xfx29(&mut self, instruction: Instruction) {
+        self.i_register = self.v_registers[instruction.x] as u16 * 5; 
+    }
+
     fn op_0xex9e(&mut self, instruction: Instruction) {
 
     }
 
     fn op_0xexa1(&mut self, instruction: Instruction) {
         self.pc += 2;
+    }
+
+    fn op_0x5xy0(&mut self, instruction: Instruction) {
+        if self.v_registers[instruction.x] == self.v_registers[instruction.y] {
+            self.pc += 2;
+        }
+    }
+
+    fn op_0x9xy0(&mut self, instruction: Instruction) {
+        if self.v_registers[instruction.x] != self.v_registers[instruction.y] {
+            self.pc += 2;
+        }
     }
 }

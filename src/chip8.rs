@@ -232,7 +232,7 @@ impl Chip8 {
         for i in 0..instruction.n {
             let bits = self.memory[(self.i_register + i as u16) as usize];
             for j in 0..8 {
-                self.display[((y + i) as usize) % HEIGHT as usize][((x + j) as usize) % WIDTH as usize] = (bits >> (7-j)) & 1;
+                self.display[(y as usize + i as usize) % HEIGHT as usize][(x as usize + j as usize) % WIDTH as usize] = (bits >> (7-j)) & 1;
             }
         }
     }

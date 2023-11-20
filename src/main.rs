@@ -24,7 +24,8 @@ fn main() {
     canvas.set_logical_size(64, 32).unwrap();
 
     let mut emulator: Chip8 = Chip8::new();
-    emulator.load_rom("roms/UFO");
+    emulator.load_rom("roms/test_opwhcode.ch8")
+        .expect("the file should exist");
 
     'running: loop {
         for event in event_pump.poll_iter() {

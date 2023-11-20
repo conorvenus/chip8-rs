@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, io::Error};
 use rand::Rng;
 
 const WIDTH: u32 = 64;
@@ -203,12 +203,12 @@ impl Chip8 {
         self.execute_instruction(instruction).expect("opcode should be defined");
     }
     
-    pub fn load_rom(&mut self, filename: &str) {
-        if let Ok(contents) = fs::read(filename) {
-            for (idx, &byte) in contents.iter().enumerate() {
-                self.memory[0x200 + idx] = byte;
-            } 
-        }
+    pub fn load_rom(&mut self, filename: &str) -> Result<(), Error> {
+        let contents = fs::read(filename)?;
+        for (idx, &byte) in contents.iter().enumerate() {
+            self.memory[0x200 + idx] = byte;
+        } 
+        Ok(())
     }
 
     fn op_0x00e0(&mut self) {

@@ -28,7 +28,6 @@ fn main() {
         .expect("the file should exist");
 
     'running: loop {
-        cycles += 1;
         let start_time = Instant::now();
 
         for event in event_pump.poll_iter() {

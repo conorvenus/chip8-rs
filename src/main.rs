@@ -9,6 +9,8 @@ use sdl2::video::Window;
 mod chip8;
 use chip8::Chip8;
 
+const CLOCK_SPEED: f64 = 600.0;
+
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -46,9 +48,9 @@ fn main() {
         }
 
         let time_elapsed = Instant::now() - start_time;
-        let sleep_for = 1.0/500.0 - time_elapsed.as_secs_f64();
+        let sleep_for = 1.0 / CLOCK_SPEED - time_elapsed.as_secs_f64();
         if sleep_for > 0.0 {
-            std::thread::sleep(Duration::from_secs_f64(sleep_for));
+            spin_sleep::sleep(Duration::from_secs_f64(sleep_for));
         }
     }
 }

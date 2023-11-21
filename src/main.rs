@@ -10,6 +10,7 @@ mod chip8;
 use chip8::Chip8;
 
 const CLOCK_SPEED: f64 = 600.0;
+const FPS: f64 = 60.0;
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
@@ -29,6 +30,8 @@ fn main() {
     emulator.load_rom("roms/Pong (1 player).ch8")
         .expect("the file should exist");
 
+    let mut last_render = Instant::now();
+
     'running: loop {
         let start_time = Instant::now();
 
@@ -43,8 +46,9 @@ fn main() {
 
         emulator.cycle();
 
-        if emulator.display_changed {
+        if emulator.display_changed && (Instant::now() - last_render).as_secs_f64() >= 1.0 / FPS {
             render_display(&emulator, &mut canvas);
+            last_render = Instant::now();
         }
 
         let time_elapsed = Instant::now() - start_time;

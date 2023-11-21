@@ -24,10 +24,11 @@ fn main() {
     canvas.set_logical_size(64, 32).unwrap();
 
     let mut emulator: Chip8 = Chip8::new();
-    emulator.load_rom("roms/INVADERS")
+    emulator.load_rom("roms/Pong (1 player).ch8")
         .expect("the file should exist");
 
     'running: loop {
+        cycles += 1;
         let start_time = Instant::now();
 
         for event in event_pump.poll_iter() {
@@ -41,7 +42,9 @@ fn main() {
 
         emulator.cycle();
 
-        render_display(&emulator, &mut canvas);
+        if emulator.display_changed {
+            render_display(&emulator, &mut canvas);
+        }
 
         let time_elapsed = Instant::now() - start_time;
         let sleep_for = 1.0/500.0 - time_elapsed.as_secs_f64();

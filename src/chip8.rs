@@ -248,6 +248,7 @@ impl Chip8 {
     }
 
     pub fn cycle(&mut self) {
+        self.display_changed = false;
         let instruction = self.fetch_instruction();
         let instruction = self.decode_instruction(instruction);
         self.execute_instruction(instruction).expect("opcode should be defined");
@@ -267,6 +268,7 @@ impl Chip8 {
                 self.display[i as usize][j as usize] = 0;
             }
         }
+        self.display_changed = true;
     }
 
     fn op_0x6xnn(&mut self, instruction: Instruction) {
@@ -290,6 +292,7 @@ impl Chip8 {
                 self.display[y][x] ^= bit;
             }
         }
+        self.display_changed = true;
     }
 
     fn op_0x2nnn(&mut self, instruction: Instruction) {

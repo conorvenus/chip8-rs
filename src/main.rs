@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
@@ -24,10 +24,12 @@ fn main() {
     canvas.set_logical_size(64, 32).unwrap();
 
     let mut emulator: Chip8 = Chip8::new();
-    emulator.load_rom("roms/test_opcode.ch8")
+    emulator.load_rom("roms/INVADERS")
         .expect("the file should exist");
 
     'running: loop {
+        let start_time = Instant::now();
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => break 'running,
@@ -41,7 +43,11 @@ fn main() {
 
         render_display(&emulator, &mut canvas);
 
-        std::thread::sleep(Duration::from_micros(10_000));
+        let time_elapsed = Instant::now() - start_time;
+        let sleep_for = 1.0/500.0 - time_elapsed.as_secs_f64();
+        if sleep_for > 0.0 {
+            std::thread::sleep(Duration::from_secs_f64(sleep_for));
+        }
     }
 }
 

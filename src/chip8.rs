@@ -102,6 +102,7 @@ pub struct Chip8 {
     keymap: [bool; 16],
     memory: [u8; 4096],
     stack: [u16; 16],
+    pub display_changed: bool,
     pub display: [[u8; WIDTH as usize]; HEIGHT as usize],
     v_registers: [u8; 16],
     i_register: u16,
@@ -119,7 +120,8 @@ impl Chip8 {
             v_registers: [0; 16],
             i_register: 0,
             pc: 0x200,
-            sp: 0
+            sp: 0,
+            display_changed: false
         };
         chip8.load_font();
         chip8
@@ -276,11 +278,16 @@ impl Chip8 {
     }
 
     fn op_0xdxyn(&mut self, instruction: Instruction) {
+        self.v_registers[0xF] = 0;
         let (x, y) = (self.v_registers[instruction.x], self.v_registers[instruction.y]);
         for i in 0..instruction.n {
             let bits = self.memory[(self.i_register + i as u16) as usize];
             for j in 0..8 {
-                self.display[(y as usize + i as usize) % HEIGHT as usize][(x as usize + j as usize) % WIDTH as usize] = (bits >> (7-j)) & 1;
+                let x = ((x + j) % WIDTH as u8) as usize;
+                let y = ((y + i) % HEIGHT as u8) as usize;
+                let bit = bits >> (7 - j) & 1;
+                self.v_registers[0xF] |= bit & self.display[y][x];
+                self.display[y][x] ^= bit;
             }
         }
     }

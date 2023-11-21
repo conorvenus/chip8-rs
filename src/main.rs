@@ -27,7 +27,7 @@ fn main() {
     canvas.set_logical_size(64, 32).unwrap();
 
     let mut emulator: Chip8 = Chip8::new();
-    emulator.load_rom("roms/Pong (1 player).ch8")
+    emulator.load_rom("roms/TANK")
         .expect("the file should exist");
 
     let mut last_render = Instant::now();

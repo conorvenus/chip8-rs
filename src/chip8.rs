@@ -285,8 +285,8 @@ impl Chip8 {
         for i in 0..instruction.n {
             let bits = self.memory[(self.i_register + i as u16) as usize];
             for j in 0..8 {
-                let x = ((x + j) % WIDTH as u8) as usize;
-                let y = ((y + i) % HEIGHT as u8) as usize;
+                let x = (x as usize + j as usize) % WIDTH as usize;
+                let y = (y as usize + i as usize) % HEIGHT as usize;
                 let bit = bits >> (7 - j) & 1;
                 self.v_registers[0xF] |= bit & self.display[y][x];
                 self.display[y][x] ^= bit;
